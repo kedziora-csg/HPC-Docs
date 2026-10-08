@@ -15,7 +15,7 @@ if the username on the local workstation is the same as on the NCAR systems, the
 ```
  $ ssh <user-name>@derecho.hpc.edu
 ```
-`ssh` will prompt you for a password and ask you to confirm using the two-factor authentication with DUO as described in [Authenticating with Duo](accounts/duo/index.md#hpc-and-ssh-logins).
+`ssh` will prompt you for a password and ask you to confirm using the two-factor authentication with DUO as described in [Authenticating with Duo](accounts/duo/index.md#hpc-and-ssh-logins). For various ways of streamlining the connection, read the rest of this section.
 
 ## Setting up local SSH configuration
 
@@ -75,8 +75,6 @@ Then connect to the cluster with agent forwarding and run the script. You will n
     $ bao-getkey
     $ exit
 ```
-Note that you don't need the `-u` option here, since the script defaults to your username on the cluster, which is the one you want. Back on your own machine, `ssh-add -L` will show the new certificate, and logins will not prompt for a password until it expires:
+Note that you don't need the `-u` option here, since the script defaults to your username on the cluster, which is the one you want. In this case you will need to authenticate twice: once for the `ssh` and once for `bao-getkey`. Back on your own machine, `ssh-add -L` will show the new certificate, and logins will not prompt for a password until it expires. This workflow relies on your local agent accepting keys added over the forwarded connection. The OpenSSH client and agent included with Windows support this. PuTTY and Pageant may not, so PuTTY users may need to use the OpenSSH client instead.
 
-    ssh <username>@derecho.hpc.ucar.edu
-
-This workflow relies on your local agent accepting keys added over the forwarded connection. The OpenSSH client and agent included with Windows support this. PuTTY and Pageant may not, so PuTTY users may need to use the OpenSSH client instead.
+If your local computer has `$SSH_AUTH_SOCK` set when your user environment is initialized, then the agent is available from any terminal or shell. You can check this with `echo $SSH_AUTH_SOCK`. If this is set to a system directory and is available from the first `ssh -A` connection that invoked `bao-getkey`, then the OpenBao key and certificate are available from any terminal.
