@@ -1,6 +1,6 @@
 # Connecting to Clusters
 
-## Quick Start
+## Terminal Connections with SSH
 
 The usual workflow is to use SSH to connect to Casper or Derecho from a terminal in your local workstation or laptop.
 
@@ -17,7 +17,7 @@ if the username on the local workstation is the same as on the NCAR systems, the
 ```
 `ssh` will prompt you for a password and ask you to confirm using the two-factor authentication with DUO as described in [Authenticating with Duo](accounts/duo/index.md#hpc-and-ssh-logins). For various ways of streamlining the connection, read the rest of this section.
 
-## Setting up local SSH configuration
+### Setting up local SSH configuration
 
 On Linux and Mac systems, you can add features to your `ssh` connection or shorten your command line by adding to your workstation's `~/.ssh/config` file. For example, this
 ```
@@ -38,7 +38,7 @@ host *
 ```
 This creates a unique ControlPath file in `~/.ssh/` for each cluster. With this enabled, you will only be required to authenticate on the first connection to each cluster, `casper` or `derecho` from your local computer. If you are connecting to both clusters, you will need to authenticate twice for multiple connections to both. Using `bao-getkey` on a Mac, as described below, it is possible limit that to one authentication for connecting multiple times to both clusters.
 
-## OpenBao Certificates
+### OpenBao Certificates
 
 `bao-getkey` uses OpenBao's HTTP API to request a certificate-signed SSH key for passwordless SSH within the systems managed by the High-Performance Systems Group (HSG) at NSF NCAR. This includes the Derecho and Casper Clusters.
 
@@ -49,7 +49,7 @@ Specifically, this script does the following, all through our OpenBao instance:
 
 It is a BASH script installed in the default PATH on Casper and Derecho. You may either copy it to your local Linux or Mac computer and put in a directory in your PATH to run it locally, or you can run it from the cluster and have the key forwarded back to your local computers agent. These procedures will be described below.
 
-### Usage
+#### Usage
 ```
     bao-getkey [-a] [-u <username>]
 ```
@@ -58,7 +58,7 @@ Options:
 *  `-a` - Request a certificate with necessary options for administrators. This will only work for system administrators
 *  `-u <username>` - Specify the username to authenticate with. This is useful if your username on the NSF NCAR clusters is different than your on your local system. Most users who are not NCAR employees will need to use this option.
 
-### Running bao-getkey from Derecho or Casper
+#### Running bao-getkey from Derecho or Casper
 
 Since `bao-getkey` is installed on the Derecho and Casper login nodes and is already in your `PATH` there. This is the recommended route for anyone who can't conveniently run the script on their own machine, Windows users in particular.
 
@@ -75,6 +75,15 @@ Then connect to the cluster with agent forwarding and run the script. You will n
     $ bao-getkey
     $ exit
 ```
-Note that you don't need the `-u` option here, since the script defaults to your username on the cluster, which is the one you want. In this case you will need to authenticate twice: once for the `ssh` and once for `bao-getkey`. Back on your own machine, `ssh-add -L` will show the new certificate, and logins will not prompt for a password until it expires. This workflow relies on your local agent accepting keys added over the forwarded connection. The OpenSSH client and agent included with Windows support this. PuTTY and Pageant may not, so PuTTY users may need to use the OpenSSH client instead.
+Note that you don't need the `-u` option here, since the script defaults to your username on the cluster, which is the one you want. In this case you will need to authenticate twice: once for the `ssh` and once for `bao-getkey`. Back on your own machine, `ssh-add -L` will show the new certificate, and logins will not prompt for a password until it expires. This workflow relies on your local agent accepting keys added over the forwarded connection. The OpenSSH client and agent included with Windows support this. PuTTY and Pageant may not, so PuTTY users may need to use the OpenSSH client instead. After the exiting back your local workstation, you can make a note of `$SSH_AUTH_SOCK` and use it in subsequent terminals for connections. For example, in the first terminal
+```
+ $ echo $SSH_AUTH_SOCK > ~/my_agent_dir
+```
+Then in subsequent terminals, where SSH_AUTH_SOCK is not set,
+```
+ $ export SSH_AUTH_SOCK=$(cat ~/my_agent_dir)
+ $ ssh -A <user-name>@<host>
+```
+This will use the key from the agent and not require authentication.
 
-If your local computer has `$SSH_AUTH_SOCK` set when your user environment is initialized, then the agent is available from any terminal or shell. You can check this with `echo $SSH_AUTH_SOCK`. If this is set to a system directory and is available from the first `ssh -A` connection that invoked `bao-getkey`, then the OpenBao key and certificate are available from any terminal.
+If your local computer has `$SSH_AUTH_SOCK` set when your user environment is initialized, then the agent is available from any terminal or shell. You can check this with `echo $SSH_AUTH_SOCK`. If this is set to a system directory and is available from the first `ssh -A` connection that invoked `bao-getkey`, then the OpenBao key and certificate are available from any terminal. In this case, `ssh` from other terminals will not need additional authentication.
